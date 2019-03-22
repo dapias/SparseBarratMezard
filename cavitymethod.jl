@@ -1,4 +1,4 @@
-using Distributions, LightGraphs
+using Distributions, LightGraphs, LinearAlgebra
 
 function generate_bouchaud_matrix(n,c, beta)
     dene = Exponential()
@@ -11,13 +11,12 @@ function generate_bouchaud_matrix(n,c, beta)
     for i in vertices(L)
         M[i,i] = -sum(M[:,i])
     end
-    peq = exp.(beta*energias)
-    peq /= sum(peq)
     p_eq =  exp.(beta*energias)
     p_eq /= sum(p_eq)
     p_inv = p_eq.^(-1/2)
     p_dir = p_eq.^(1/2)
-    Ms = diagm(p_inv)*M *diagm(p_dir)
+    Ms = Diagonal(p_inv)*M*Diagonal(p_dir)
+    Ms = Matrix(Ms)
     return Ms, rates[1,:]
 end
 
@@ -39,15 +38,16 @@ function generate_barrat_matrix(n,c, beta)
     peq /= sum(peq)
     p_inv = peq.^(-1/2)
     p_dir = peq.^(1/2)
-    Ms = diagm(p_inv)*M *diagm(p_dir)
+    Ms = Diagonal(p_inv)*M *Diagonal(p_dir)
+    Ms = Matrix(Ms)
     return Ms, energias
 end
 
 function neighbors_list(M)
-    v = Array{Array{Int64,1}}(0)
+    v = [Int64[]]
     N = size(M)[1]
     for i in 1:N
-        v_i = Array{Int64}(0)
+        v_i = Int64[]
         for j in 1:N
             if M[i,j] != 0.
                 push!(v_i, j)
@@ -55,7 +55,7 @@ function neighbors_list(M)
         end
         v = vcat(v, [v_i])    
     end
-    v
+    v[2:end]
 end
 
 function local_error(lambda, matrix, neighs, Omega_old, epsilon, rates)
@@ -65,7 +65,7 @@ function local_error(lambda, matrix, neighs, Omega_old, epsilon, rates)
     Omega_new = zeros(Complex{Float64}, N,N);
     Omega_sum = zeros(Complex{Float64}, N,N)
     
-    ##Sum involved in Δ^(j)_i, i.e. ∑_{k ∈ ∂i \ j} is stored in Delta_sum
+    ##Sum involved in ω^(j)_i, i.e. ∑_{k ∈ ∂i \ j} is stored in Omega_sum
     for i in 1:N
         for j in 1:N
             if j!= i
@@ -155,15 +155,15 @@ end
 function rhocavity_barrat(x, c, N, beta; epsilon = 0.005im, tolerance = 0.1, generator = generate_barrat_matrix)
     A, energies = generator(N,c, beta)
     nei = neighbors_list(A)
-    error = 10.0*tolerance*N*N
+    error2 = 10.0*tolerance*N*N
     
     Omega = zeros(Complex{Float64}, N,N);   
 
     f = [exp(beta*(energies[i] + energies[j])/2)/(2*cosh(beta*(energies[i]-energies[j])/2.)) for i in 1:N, j in 1:N]
     rates = [exp(-beta*energies[i])/c for i in 1:N]
     
-    while error > tolerance
-        error, Omega = local_error(x, A,nei, Omega, epsilon, f, rates)
+    while error2 > tolerance
+        error2, Omega = local_error(x, A,nei, Omega, epsilon, f, rates)
     end
  
     sum_var = 0.
@@ -217,7 +217,7 @@ function rho_barrat_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsi
     ##Epsilon 2 is used to compute the variance
     beta = 1.0/T
     poparray = init_array(Np)
-    omegas = update!(lambda, c, T, Np, nsteps, epsilon, poparray);
+    update!(lambda, c, T, Np, nsteps, epsilon, poparray);
     res = zeros(ensemble);
     
     dist_energy = Exponential()
