@@ -195,8 +195,10 @@ function init_array(Np)
     Population(rand(Complex{Float64},Np), rand(dist_energy, Np))
 end
 
-function update!(lambda,c,T,Np, nsteps, epsilon, poparray)
+
+function population_update(lambda,c,T,Np, nsteps, epsilon)
     beta = 1.0/T
+    poparray = init_array(Np)
     dist_energy = Exponential()
     for i in 1:nsteps
         random_elements = rand(1:Np,c-1)
@@ -204,7 +206,6 @@ function update!(lambda,c,T,Np, nsteps, epsilon, poparray)
         energies = poparray.energies[random_elements]
         e1 = rand(dist_energy)
         Kij = K_sym(e1, beta, energies)
-        ###If omega is infinty create a fkag
         omega_cm1 =  im*(lambda-epsilon*im)*exp(beta*e1)*c + sum(im*(Kij.*omegas)./(im*(Kij) .+ omegas))
         relement = rand(1:Np)
         poparray.omegas[relement] = omega_cm1
@@ -213,11 +214,28 @@ function update!(lambda,c,T,Np, nsteps, epsilon, poparray)
     poparray
 end
 
-function rho_barrat_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsilon2)
-    ##Epsilon 2 is used to compute the variance
+
+function population_update!(lambda,c,T,Np, nsteps, epsilon, poparray)
+    beta = 1.0/T
+    dist_energy = Exponential()
+    for i in 1:nsteps
+        random_elements = rand(1:Np,c-1)
+        omegas = poparray.omegas[random_elements]
+        energies = poparray.energies[random_elements]
+        e1 = rand(dist_energy)
+        Kij = K_sym(e1, beta, energies)
+        omega_cm1 =  im*(lambda-epsilon*im)*exp(beta*e1)*c + sum(im*(Kij.*omegas)./(im*(Kij) .+ omegas))
+        relement = rand(1:Np)
+        poparray.omegas[relement] = omega_cm1
+        poparray.energies[relement] = e1
+    end
+    poparray
+end
+
+function rho_barrat_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsilon2::Float64)
     beta = 1.0/T
     poparray = init_array(Np)
-    update!(lambda, c, T, Np, nsteps, epsilon, poparray);
+    population_update!(lambda, c, T, Np, nsteps, epsilon, poparray);  ##Equilibrium is reached
     res = zeros(ensemble);
     
     dist_energy = Exponential()
@@ -226,24 +244,68 @@ function rho_barrat_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsi
     energies = poparray.energies[random_elements]  
     e1 = rand(dist_energy)
     Kij = K_sym(e1, beta, energies)
-#    epsilon = 1.0e-4 ###For evaluation of the variance
-    omega_cm1 =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
-    res[1] = real(exp(beta*e1)*c/omega_cm1)
+    omega_c =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
+    res[1] = real(exp(beta*e1)*c/omega_c)
+ 
     for j in 2:ensemble
         random_elements = rand(1:Np,c)
         omega_sample = poparray.omegas[random_elements]
         energies = poparray.energies[random_elements]  
         e1 = rand(dist_energy)
         Kij = K_sym(e1, beta, energies)
-        omega_cm1 =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
-        
-        res[j] = real(exp(beta*e1)*c/omega_cm1)
+        omega_c =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))   
+        res[j] = real(exp(beta*e1)*c/omega_c)
     end
     mean(res)*1/pi
 end
 
 
-function omega_cm(lambda, c, T, Np, epsilon, nsteps)
+
+function rho_barrat_population(lambda, c, T, Np, ensemble, epsilon, epsilon2, poparray::Population)
+    ##For this function a population array is passed that is assumed is already equilibrated
+    beta = 1.0/T
+    res = zeros(ensemble);  
+    dist_energy = Exponential()
+    random_elements = rand(1:Np,c)
+    omega_sample = poparray.omegas[random_elements]
+    energies = poparray.energies[random_elements]  
+    e1 = rand(dist_energy)
+    Kij = K_sym(e1, beta, energies)
+    omega_c =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
+    res[1] = real(exp(beta*e1)*c/omega_c)
+    ##update the population with new values
+    omega_sample = omega_sample[1:end-1]
+    energies = energies[1:end-1]
+    Kij = K_sym(e1, beta, energies)
+    omega_cm1 = im*(lambda-epsilon*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
+    relement = rand(1:Np)
+    poparray.omegas[relement] = omega_cm1
+    poparray.energies[relement] = e1
+    ###################
+    
+    for j in 2:ensemble
+        random_elements = rand(1:Np,c)
+        omega_sample = poparray.omegas[random_elements]
+        energies = poparray.energies[random_elements]  
+        e1 = rand(dist_energy)
+        Kij = K_sym(e1, beta, energies)
+        omega_c =  im*(lambda-epsilon2*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))   
+        res[j] = real(exp(beta*e1)*c/omega_c)
+        ##update the population with new values
+        omega_sample = omega_sample[1:end-1]
+        energies = energies[1:end-1]
+        Kij = K_sym(e1, beta, energies)
+        omega_cm1 = im*(lambda-epsilon*im)*exp(beta*e1)*c + sum(im*(Kij.*omega_sample)./(im*(Kij) .+ omega_sample))
+        relement = rand(1:Np)
+        poparray.omegas[relement] = omega_cm1
+        poparray.energies[relement] = e1
+        ##########################
+    end
+    mean(res)*1/pi
+end
+
+
+function population_bouchaud(lambda, c, T, Np, nsteps, epsilon)
     poparray = rand(Complex{Float64},Np)
     tau_dist = Pareto(T)
     for i in 1:nsteps
@@ -256,8 +318,8 @@ function omega_cm(lambda, c, T, Np, epsilon, nsteps)
     poparray
 end
 
-function rho_bouchaud_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsilon2)
-    omegas = omega_cm(lambda, c, T, Np, epsilon, nsteps);
+function rho_bouchaud_population(lambda, c, T, Np, ensemble, nsteps, epsilon, epsilon2::Float64)
+    omegas = population_bouchaud(lambda, c, T, Np,  nsteps, epsilon);
     tau_dist = Pareto(T)
     res = zeros(ensemble);
     tau = rand(tau_dist)
@@ -272,3 +334,20 @@ function rho_bouchaud_population(lambda, c, T, Np, ensemble, nsteps, epsilon, ep
     end
     mean(res)*1/pi
 end
+
+function rho_bouchaud_population(lambda, c, T, Np, ensemble, epsilon, epsilon2, omegas::Vector{Complex{Float64}})
+    tau_dist = Pareto(T)
+    res = zeros(ensemble);
+    tau = rand(tau_dist)
+    omega_sample = omegas[rand(1:Np,c)]
+    omega_cm1 = im*(lambda-epsilon2*im)*tau*c + sum(im*omega_sample./(1.0*im .+ omega_sample))
+    res[1] = real(tau*c/omega_cm1)
+    for j in 2:ensemble
+        tau = rand(tau_dist)
+        omega_sample = omegas[rand(1:Np,c)]
+        omega_cm1 = im*(lambda-epsilon2*im)*tau*c + sum(im*omega_sample./(1.0*im .+ omega_sample))
+        res[j] = real(tau*c/omega_cm1)
+    end
+    mean(res)*1/pi
+end
+
