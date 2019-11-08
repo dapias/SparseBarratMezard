@@ -1,6 +1,7 @@
-using JLD, Distributed
+using  Distributed
 addprocs(3)
 
+@everywhere using JLD
 @everywhere include("cavitymethod2.jl")
 @everywhere function locincluster(lambda, T; N = 10^2, c = 3, epsilon2 =  [1e-5,1e-3, 1e-4])
     nsteps = N*10^4
