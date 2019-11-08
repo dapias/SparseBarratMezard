@@ -5,6 +5,7 @@ nsteps = N*10^4
 T = 0.6
 lambda = -0.05
 epsilon2 = [1e-5,1e-3, 1e-4];
+c = 3
 rho_mean = mean(DOS(lambda, c, T, 10^3, 10^5, 10^7, epsilon2))
 ns = 2^17
 epsi = 8.0./(rho_mean.*ns);
