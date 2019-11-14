@@ -68,7 +68,7 @@ function symmetric_f(e1::Float64, beta::Float64, e2::Float64)
 end
 
 function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
-        Omega_old::SparseMatrixCSC, epsilon::Float64,  beta::Float64, energies::Array)
+        Omega_old::SparseMatrixCSC, epsilon::Float64,  beta::Float64, energies::Array, c::Int64)
 
     reg = 10^-10.
     N = length(energies)
@@ -115,7 +115,7 @@ function rho(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64, A::Unio
     end
     
     while error2 > tolerance
-         error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies)
+         error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c)
         #error2, Omegas = local_error(lambda, nei,  Omegas, 1.0e-300,  beta, energies)
     end
     
@@ -165,7 +165,7 @@ function DOSIPR(lambda::Float64, c::Int64, n::Int64, beta::Float64, epsilon::Flo
     end
     
     while error2 > tolerance
-        error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies)
+        error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c)
     end
     
     sum_var = 0.
@@ -204,7 +204,7 @@ function omegas(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64, A::U
     end
     
     while error2 > tolerance
-        error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies)
+        error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c)
     end
     
     oms = zeros(Complex{Float64}, n)
@@ -400,7 +400,7 @@ end
 #################################
 
 
-###Paso la poblacion equilibrada y computo simultáneamente DOS y IPR
+###Paso la poblacion equilibrada y computo simultaneamente DOS y IPR
 function DOSIPR(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int64, epsilon2::Array{Float64,1}, poparray::Population; epsilon = 1e-300)
     ##For this function a population array is passed that is assumed is already equilibrated
 
