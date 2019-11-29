@@ -68,19 +68,19 @@ function symmetric_f(e1::Float64, beta::Float64, e2::Float64)
 end
 
 function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
-        Omega_old::SparseMatrixCSC, epsilon::Float64,  beta::Float64, energies::Array, c::Int64)
+        Omega_old::SparseMatrixCSC{Complex{Float64},Int64}, epsilon::Float64,  beta::Float64, energies::Array, c::Int64, fs::SparseMatrixCSC{Complex{Float64},Int64}, N::Int64, Omega_sum::SparseMatrixCSC{Complex{Float64},Int64})
 
     reg = 10^-10.
-    N = length(energies)
-    Omega_sum = spzeros(Complex{Float64}, N, N)
+    #N = length(energies)
+    #Omega_sum = spzeros(Complex{Float64}, N, N)
     
     for k in 1:N
         value = neighs[k]
         for j in value
             for l in value
                 if l != j
-                    fkl = symmetric_f(energies[l], beta, energies[k])
-                    Omega_sum[k, j] += im*fkl*Omega_old[l, k]/(im*fkl +Omega_old[l,k])
+                    #fkl = symmetric_f(energies[l], beta, energies[k])
+                    Omega_sum[k, j] += im*fs[k,l]*Omega_old[l, k]/(im*fs[k,l] +Omega_old[l,k])
                 end
             end
             
@@ -97,7 +97,9 @@ function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
     error = maximum([max_real, max_imag])
     #error = sum(abs.(Omega_sum .- Omega_old))
 
-    return error, Omega_sum
+    @inbounds fill!(Omega_old, zero(Complex{Float64}))
+
+    return error, Omega_sum, Omega_old
 end
 
 function rho(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64, A::Union{Matrix, SparseMatrixCSC}, energies::
@@ -105,26 +107,30 @@ function rho(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64, A::Unio
 
     n = length(energies)
     error2 = 10.0*tolerance*n*n
-    Omegas = spzeros(Complex{Float64}, n, n)   ##Initialize
+    Omegas = spzeros(Complex{Float64}, n, n)   
+    fs = spzeros(Complex{Float64}, n, n)
     
     for key in 1:n
         value = nei[key]
         for i in value
-            Omegas[key, i] = rand(Complex{Float64}) 
+            Omegas[key, i] = rand(Complex{Float64})
+            fkeyi = symmetric_f(energies[i], beta, energies[key])
+            fs[key,i] = fs[i,key] = fkeyi
         end
     end
-    
+
+    Omegap = spzeros(Complex{Float64}, n, n)
+
     while error2 > tolerance
-         error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c)
-        #error2, Omegas = local_error(lambda, nei,  Omegas, 1.0e-300,  beta, energies)
+         error2, Omegas, Omegap = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c, fs, n, Omegap)
     end
     
     sum_var = 0.
     for j in 1:n
         sum_j = 0.
         for k in nei[j]
-            fkj = symmetric_f(energies[j], beta, energies[k])
-            sum_j += im*Omegas[k,j]*fkj/( im*fkj + Omegas[k,j])
+            #fkj = symmetric_f(energies[j], beta, energies[k])
+            sum_j += im*Omegas[k,j]*fs[k,j]/( im*fs[k,j] + Omegas[k,j])
         end
         
         omega_j = im*(lambda - epsilon*im)/(exp(-beta*energies[j])/c) + sum_j
@@ -156,16 +162,22 @@ function DOSIPR(lambda::Float64, c::Int64, n::Int64, beta::Float64, epsilon::Flo
     error2 = 10.0*tolerance*n*n
     
     Omegas = spzeros(Complex{Float64}, n, n)   ##Initialize
-    
+    fs = spzeros(Complex{Float64}, n, n)
+
     for key in 1:n
         value = nei[key]
         for i in value
             Omegas[key, i] = rand(Complex{Float64})
+            fkeyi = symmetric_f(energies[i], beta, energies[key])
+            fs[key,i] = fs[i,key] = fkeyi
         end
     end
+
+    Omegap = spzeros(Complex{Float64}, n, n)
+
     
     while error2 > tolerance
-        error2, Omegas = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c)
+        error2, Omegas, Omegap = local_error(lambda, nei,  Omegas, epsilon,  beta, energies, c, fs, n, Omegap)
     end
     
     sum_var = 0.
@@ -173,8 +185,8 @@ function DOSIPR(lambda::Float64, c::Int64, n::Int64, beta::Float64, epsilon::Flo
     for j in 1:n
         sum_j = 0.
         for k in nei[j]
-            fkj = symmetric_f(energies[j], beta, energies[k])
-            sum_j += im*Omegas[k,j]*fkj/( im*fkj + Omegas[k,j])
+            #fkj = symmetric_f(energies[j], beta, energies[k])
+            sum_j += im*Omegas[k,j]*fs[k,j]/( im*fs[k,j] + Omegas[k,j])
         end
         
         omega_j = im*(lambda - epsilon*im)/(exp(-beta*energies[j])/c)  + sum_j
