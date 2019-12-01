@@ -1,4 +1,4 @@
-####Gillespie
+export init_tree, init_gillespie!, gillespie1st!, gillespie!
 
 mutable struct Node  ##tengo que agregar la escape_rate
     distance::Int64
