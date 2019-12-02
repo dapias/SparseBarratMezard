@@ -1,4 +1,4 @@
-export init_tree, init_gillespie!, gillespie1st!, gillespie!
+export init_tree, init_gillespie!, gillespie1st!, gillespie!, Node
 
 mutable struct Node  ##tengo que agregar la escape_rate
     distance::Int64
@@ -11,7 +11,7 @@ mutable struct Node  ##tengo que agregar la escape_rate
     escape_rate::Float64
 end
 
-function node(init_node, i, beta)
+function node(init_node, i, beta, c)
     dene = Exponential()
     self_energy = init_node.energies[i]
     neighs_energy = vcat(init_node.energy, rand(dene,c-1))
@@ -51,12 +51,12 @@ function init_gillespie!(tree::Dict{Float64,Node}, c::Int64, T::Float64)
     ###crea los nodos vecinos
     childs = Array{Node}(undef, c)
     i = 1
-    n_node = node(initial_node, i, beta)
+    n_node = node(initial_node, i, beta, c)
     childs[1] = n_node
     #tree[n_node.distance] = [n_node]
     
     for i in 2:c
-        n_node = node(initial_node, i, beta)
+        n_node = node(initial_node, i, beta, c)
         childs[i] = n_node
         #ex = get!(tree, 1, [n_node])
         #push!(ex,n_node)
@@ -83,10 +83,10 @@ function gillespie1st!(tree::Dict{Float64, Node},  c::Int64, T::Float64, current
     ###Los nuevos nodos tienen indice 2...c. El 1 es reservado al nodo padre
     childs = Array{Node}(undef, c-1)
     i = 2
-    n_node = node(current_node, i, beta)
+    n_node = node(current_node, i, beta, c)
     childs[i - 1] = n_node
     for i in 3:c
-        n_node = node(current_node, i, beta)
+        n_node = node(current_node, i, beta, c)
         childs[i-1] = n_node
         #ex = get!(tree, current_node.distance + 1, [n_node])
         #push!(ex,n_node)
@@ -140,10 +140,10 @@ function gillespie!(tree::Dict{Float64, Node},  c::Int64, T::Float64, current_no
     else   ###crea nuevos nodos
         childs = Array{Node}(undef, c-1)
         i = 2
-        n_node = node(current_node, i, beta)
+        n_node = node(current_node, i, beta, c)
         childs[i - 1] = n_node
         for i in 3:c
-            n_node = node(current_node, i, beta)
+            n_node = node(current_node, i, beta, c)
             childs[i-1] = n_node
         end
         current_node.childs = childs
