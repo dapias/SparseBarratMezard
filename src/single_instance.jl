@@ -62,14 +62,13 @@ function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
             
         end
     end
-
-    relative_real = real.(Omega_sum .- Omega_old)./(abs.(real.(Omega_old))  .+ reg)
-    relative_imag = imag.(Omega_sum .- Omega_old)./(abs.(imag.(Omega_old)) .+ reg)
-
-    max_real = maximum(abs.(relative_real))
-    max_imag = maximum(abs.(relative_imag))
-    error = maximum([max_real, max_imag])
-    #error = sum(abs.(Omega_sum .- Omega_old))  Probar la diferencia en performance con este error
+###Two ways of computing the error: Absolute or relative. The absolute demands less memory (used here)
+    #relative_real = real.(Omega_sum .- Omega_old)./(abs.(real.(Omega_old))  .+ reg)
+    #relative_imag = imag.(Omega_sum .- Omega_old)./(abs.(imag.(Omega_old)) .+ reg)
+    #max_real = maximum(abs.(relative_real))
+    #max_imag = maximum(abs.(relative_imag))
+    #error = maximum([max_real, max_imag])
+    error = sum(abs.(Omega_sum .- Omega_old))  
 
     @inbounds fill!(Omega_old, zero(Complex{Float64}))
 
