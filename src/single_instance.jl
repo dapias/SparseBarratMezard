@@ -44,25 +44,21 @@ function symmetric_f(e1::Float64, beta::Float64, e2::Float64)
 end
 
 function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
-        Omega_old::SparseMatrixCSC{Complex{Float64},Int64}, epsilon::Float64,  beta::Float64, energies::Array, c::Int64, fs::SparseMatrixCSC{Complex{Float64},Int64}, N::Int64, Omega_sum::SparseMatrixCSC{Complex{Float64},Int64})
+        Omega_old::SparseMatrixCSC{Complex{Float64},Int64}, epsilon::Float64,  beta::Float64, energies::Array{Float64,1}, c::Int64, fs::SparseMatrixCSC{Complex{Float64},Int64}, N::Int64, Omega_sum::SparseMatrixCSC{Complex{Float64},Int64})
 
-    reg = 10^-10.
-    
     for k in 1:N
         value = neighs[k]
         for j in value
             for l in value
                 if l != j
-                    #fkl = symmetric_f(energies[l], beta, energies[k])
                     Omega_sum[k, j] += im*fs[k,l]*Omega_old[l, k]/(im*fs[k,l] +Omega_old[l,k])
                 end
             end
-            
             Omega_sum[k,j] += im*(lambda - im*epsilon)/(exp(-beta*energies[k])/c)
-            
         end
     end
-###Two ways of computing the error: Absolute or relative. The absolute demands less memory (used here)
+    ###Two ways of computing the error: Absolute or relative. The absolute demands less memory (used here)
+    #        reg = 10^-10.
     #relative_real = real.(Omega_sum .- Omega_old)./(abs.(real.(Omega_old))  .+ reg)
     #relative_imag = imag.(Omega_sum .- Omega_old)./(abs.(imag.(Omega_old)) .+ reg)
     #max_real = maximum(abs.(relative_real))
