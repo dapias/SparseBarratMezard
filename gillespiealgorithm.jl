@@ -2,7 +2,7 @@ include("src/SparseBarratMezard.jl")
 using JLD, JLD2, StatsBase
 using .SparseBarratMezard
     
-c = 5
+c = 10
 T_grid = [0.2, 0.35, 0.5, 0.8]
 #T_grid = [0.35, 0.5]
 t_max = 10^4
@@ -22,5 +22,5 @@ for T in T_grid
         trees[i] = tree
     end
        
-    @JLD2.save "data/gillespie/T=$(T)c=$(c).jld2" trees
+    @JLD2.save "data/gillespie/trees/T=$(T)c=$(c).jld2" trees
 end
