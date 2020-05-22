@@ -1,3 +1,0 @@
-- Revisar performance de single_instance calculando el error como absoluto en vez de relativo.
-
--Hay mucho código repetido en population_dynamics.jl

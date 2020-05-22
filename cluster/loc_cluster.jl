@@ -3,7 +3,7 @@
 
 @everywhere include("src/SparseBarratMezard.jl")
 @everywhere using .SparseBarratMezard
-@everywhere using JLD
+@everywhere using JLD, StatsBase
 @everywhere function locincluster(lambda, T; N = 10^4, c = 3, epsilon2 =  [1e-5,1e-3, 1e-4])
     nsteps = N*10^4
     rho_mean = mean(DOS(lambda, c, T, 10^3, 10^5, 10^7, epsilon2))

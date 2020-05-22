@@ -1,4 +1,4 @@
-export generate_population, population_update!, DOS, DOSIPR
+export generate_population, population_update!, DOS, DOSIPR, symmetric_f
     
 struct Population
     zetas::Array{Complex{Float64},1}
@@ -52,46 +52,13 @@ function population_update!(lambda::Float64,c::Int64,T::Float64,Np::Int64, nstep
 end
 
 function DOS(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int64, nsteps::Int64,  epsilon2::Array{Float64,1}; epsilon = 1.0e-300)
-    beta = 1.0/T
     poparray = init_population(Np)
     population_update!(lambda, c, T, Np, nsteps, epsilon, poparray);  ##Equilibrium is reached
-    res = zeros(ensemble, length(epsilon2))
-    dist_energy = Exponential()
-    random_elements = rand(1:Np,c)
-    zetas_sample = poparray.zetas[random_elements]
-    energies = poparray.energies[random_elements]  
-    e1 = rand(dist_energy)
-    fsym = symmetric_f(e1, beta, energies)
-    sum_term = sum(im*fsym.*zetas_sample./(im*fsym .+ zetas_sample))
-    for i  in 1:length(epsilon2)
-        zeta_c =   im*(lambda-epsilon2[i]*im)/(exp(-beta*e1)/c)  + sum_term
-        res[1, i] = real(1/(zeta_c*(exp(-beta*e1)/c)))
-    end
-    ##update the population after one measurement
-    population_update!(lambda,c,T,Np, 1, epsilon, poparray)
-    ##########################
-    for j in 2:ensemble
-        random_elements = rand(1:Np,c)
-        zetas_sample = poparray.zetas[random_elements]
-        energies = poparray.energies[random_elements]  
-        e1 = rand(dist_energy)
-        fsym = symmetric_f(e1, beta, energies)
-        sum_term = sum(im*fsym.*zetas_sample./(im*fsym .+ zetas_sample))
-        for i  in 1:length(epsilon2)
-            zeta_c =   im*(lambda-epsilon2[i]*im)/(exp(-beta*e1)/c)  + sum_term
-            res[j, i] = real(1/(zeta_c*(exp(-beta*e1)/c)))
-        end
-        ##update the population with new values
-        population_update!(lambda,c,T,Np, 1, epsilon, poparray)
-        ##########################
-    end
-    [mean(res[:,i])*1/pi for i in 1:length(epsilon2)]
-    
+    DOS(lambda, c, T, Np, ensemble, epsilon2, poparray, epsilon = epsilon)
 end
 
 function DOS(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int64, epsilon2::Array{Float64,1}, poparray::Population; epsilon = 1e-300)
     ##For this function a population array is passed that is assumed is already equilibrated
-
     beta = 1.0/T
     res = zeros(ensemble, length(epsilon2));
     dist_energy = Exponential()

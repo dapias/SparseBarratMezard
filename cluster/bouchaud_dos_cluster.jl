@@ -3,7 +3,7 @@
 @everywhere using JLD
 
 
-@everywhere function dos(lambda, T; N = 10^4, c = 5,
+@everywhere function dos(lambda, T; N = 10^4, c = 3,
              ensemble = 10^7, ep2 = [1e-3, 1e-4, 1e-5])
     a = load("../data/populations/Bouchaud/T=$(T)/lambda=$(lambda)N=$(N)c=$(c)epsi_trescientos.jld")
     pop = a["pop"]
@@ -27,7 +27,8 @@ end
 #@everywhere l_grid = -exp10.(range(-3,stop =0, length = 101))
 #@everywhere cs = [5, 10,20,100]
 
-@everywhere cs = [5, 20, 100]
+#@everywhere cs = [5, 20, 100]
+@everywhere cs = [3]
 @everywhere l_grid = collect(-1:0.01:0.)
 
 for c in cs

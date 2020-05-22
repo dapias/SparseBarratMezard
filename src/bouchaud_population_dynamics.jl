@@ -54,7 +54,7 @@ function bouchaud_DOS(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble
     omega_sample = poparray.zetas[random_elements]
     for i  in 1:length(epsilon2)
         omega_c = im*(lambda-epsilon2[i]*im)/(exp(-beta*e1)/c) + sum(im*omega_sample./(1.0*im .+ omega_sample))
-        res[1, i] = real(1/(zeta_c*(exp(-beta*e1)/c)))
+        res[1, i] = real(1/(omega_c*(exp(-beta*e1)/c)))
     end
     ##update the population after one measurement
     bouchaud_population_update!(lambda,c,T,Np, 1, epsilon, poparray)
@@ -65,7 +65,7 @@ function bouchaud_DOS(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble
         omega_sample = poparray.zetas[random_elements]
         for i  in 1:length(epsilon2)
             omega_c = im*(lambda-epsilon2[i]*im)/(exp(-beta*e1)/c) + sum(im*omega_sample./(1.0*im .+ omega_sample))
-            res[j, i] = real(1/(zeta_c*(exp(-beta*e1)/c)))
+            res[j, i] = real(1/(omega_c*(exp(-beta*e1)/c)))
         end
         ##update the population with new values
         bouchaud_population_update!(lambda,c,T,Np, 1, epsilon, poparray)

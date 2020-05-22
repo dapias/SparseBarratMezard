@@ -71,9 +71,8 @@ function local_error(lambda::Float64,  neighs::Array{Array{Int64,1},1},
     return error, Omega_sum, Omega_old
 end
 
-function rho(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64, A::Union{Matrix, SparseMatrixCSC}, energies::
-                        Array{Float64,1}, nei::Array{Array{Int64,1},1}; tolerance = 0.1)
-
+function rho(lambda::Float64, c::Int64, beta::Float64, epsilon::Float64,  energies::Array{Float64,1}, nei::Array{Array{Int64,1},1}; tolerance = 0.1)
+##The Barrat Matrix is not a needed  argument. The energies and the list of neighbours is enough information to apply the cavity method.
     n = length(energies)
     error2 = 10.0*tolerance*n*n
     Omegas = spzeros(Complex{Float64}, n, n)   

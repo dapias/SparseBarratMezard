@@ -5,7 +5,8 @@ t_max = 10^4
 t_grid = exp10.(range(0, stop = log10(t_max), length = 100));
 T_grid = [0.2, 0.35, 0.5, 0.8]
 #T_grid = [0.2, 0.35]
-c = 5
+c = 20
+println("Hola")
 
 for T in T_grid
     @JLD2.load "/Users/diegotapias/cavity/data/gillespie/trees/T=$(T)c=$(c).jld2" trees

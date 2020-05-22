@@ -12,10 +12,10 @@
     save("../data/populations/Bouchaud/T=$(T)/lambda=$(lambda)N=$(N)c=$(c)epsi_trescientos.jld", "n", N, "pop", pop_epsi)
 end
 
-@everywhere l_grid = collect(-1:0.01:0.)
-#@everywhere l_grid = -exp10.(range(-3,stop =0, length = 101))
+#@everywhere l_grid = collect(-1:0.01:0.)
+@everywhere l_grid = -exp10.(range(-3,stop =0, length = 101))
 @everywhere T = 0.6
-@everywhere c = 100
+@everywhere c = 3
 
 #mkdir("../data/populations/T=$(T)/")
 println("start")
