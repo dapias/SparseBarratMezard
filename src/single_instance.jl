@@ -9,16 +9,20 @@ function generate_sparse_barrat_matrix(n::Int64,c::Int64, beta::Float64)
     M = 1.0*adj;
     l_nei = L.fadjlist;
 
+    a = zeros(n)
+    
     for i in 1:n
         for j in 1:c
             k = l_nei[i][j]
             M[i,k] = 1.0/c*(1.0/(1.0+exp(-beta*(energies[i] - energies[k]))))
+            a[k] += M[i,k]
         end
     end
-
+    
     for i in vertices(L)
-        M[i,i] = -sum(M[:,i])
+        M[i,i] = -a[i]
     end
+    
     peq = exp.(beta*energies)
     peq /= sum(peq)
     p_inv = peq.^(-1/2)
