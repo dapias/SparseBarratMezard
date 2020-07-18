@@ -1,4 +1,4 @@
-export generate_population, population_update!, DOS, DOSIPR, symmetric_f
+export generate_population, population_update!, DOS, DOSIPR, symmetric_f, typicalDOSIPR
     
 struct Population
     zetas::Array{Complex{Float64},1}
@@ -150,4 +150,63 @@ function DOSIPR(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int6
     population_update!(lambda, c, T, Np, nsteps, epsilon, poparray); 
     DOSIPR(lambda, c, T, Np, ensemble, epsilon2, poparray; epsilon = epsilon)
 end
+
+
+
+###Paso la poblacion equilibrada y computo simultaneamente DOS y IPR
+function typicalDOSIPR(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int64, epsilon2::Float64, poparray::Population; epsilon = 1e-300)
+    ##For this function a population array is passed that is assumed is already equilibrated
+
+    beta = 1.0/T
+    ##init arrays
+    res = zeros(ensemble)
+    ipr = zeros(ensemble)
+    ######
+    dist_energy = Exponential()
+    random_elements = rand(1:Np,c)
+    zetas_sample = poparray.zetas[random_elements]
+    energies = poparray.energies[random_elements]  
+    e1 = rand(dist_energy)
+    fsym = symmetric_f(e1, beta, energies)
+    sum_term = sum(im*fsym.*zetas_sample./(im*fsym .+ zetas_sample))
+    #for i  in 1:length(epsilon2)
+        zeta_c =   im*(lambda-epsilon2*im)/(exp(-beta*e1)/c)  + sum_term
+        res[1] = real(1/(zeta_c*(exp(-beta*e1)/c)))
+        ipr[1] = abs2(1/(zeta_c*(exp(-beta*e1)/c)))
+    #end
+    ##update the population after one measurement
+    population_update!(lambda,c,T,Np, 1, epsilon, poparray)
+    ##########################
+    for j in 2:ensemble
+        random_elements = rand(1:Np,c)
+        zetas_sample = poparray.zetas[random_elements]
+        energies = poparray.energies[random_elements]  
+        e1 = rand(dist_energy)
+        fsym = symmetric_f(e1, beta, energies)
+        sum_term = sum(im*fsym.*zetas_sample./(im*fsym .+ zetas_sample))
+        #for i  in 1:length(epsilon2)
+            zeta_c =   im*(lambda-epsilon2*im)/(exp(-beta*e1)/c)  + sum_term
+            res[j] = real(1/(zeta_c*(exp(-beta*e1)/c)))
+            ipr[j] = abs2(1/(zeta_c*(exp(-beta*e1)/c)))
+#        end
+        ##update the population with new values
+        population_update!(lambda,c,T,Np, 1, epsilon, poparray)
+        ##########################
+    end
+    dos = mean(res)*1/pi
+    i2 = mean(ipr)*epsilon2/(dos*pi)
+    
+    typical = exp(mean(log.(res)))
+    
+    typical, i2
+end
+
+###Sin pasar la poblacion
+function typicalDOSIPR(lambda::Float64, c::Int64, T::Float64, Np::Int64, ensemble::Int64, nsteps::Int64, epsilon2::Float64; epsilon = 1e-300)
+    poparray = init_population(Np)
+    population_update!(lambda, c, T, Np, nsteps, epsilon, poparray); 
+    typicalDOSIPR(lambda, c, T, Np, ensemble, epsilon2, poparray; epsilon = epsilon)
+end
+
+
 
