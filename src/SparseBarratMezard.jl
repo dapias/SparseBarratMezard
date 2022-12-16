@@ -1,6 +1,6 @@
 module SparseBarratMezard
 
-using Distributions, LightGraphs, LinearAlgebra, SparseArrays, StatsBase,
+using Distributions, Graphs, LinearAlgebra, SparseArrays, StatsBase,
     InverseLaplace
 
 include("single_instance.jl")

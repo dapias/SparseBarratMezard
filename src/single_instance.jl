@@ -7,7 +7,7 @@ function generate_sparse_barrat_elements(n::Int64,c::Int64)
     adj = adjacency_matrix(L);
     energies = rand(dene,nv(L));
     #M = 1.0*adj;
-    l_nei = LightGraphs.SimpleGraphs.fadj(L)
+    l_nei = Graphs.SimpleGraphs.fadj(L)
 
     return energies, l_nei, adj, L
 end
